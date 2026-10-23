@@ -1,0 +1,9 @@
+<resources>
+    <style name="Theme.Locin" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#090D14</item>
+        <item name="android:colorBackground">#090D14</item>
+        <item name="android:statusBarColor">#090D14</item>
+        <item name="android:navigationBarColor">#090D14</item>
+        <item name="android:colorAccent">#39D9FF</item>
+    </style>
+</resources>
