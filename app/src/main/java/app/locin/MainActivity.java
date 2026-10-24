@@ -16,7 +16,10 @@ import android.text.InputFilter;
 import android.text.InputType;
 import android.text.TextWatcher;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -51,6 +54,29 @@ public class MainActivity extends Activity {
     private String active;
     private int sel = -1;
     private boolean loading = true, resetArmed = false;
+    private View rootView;
+    private final TextView.OnEditorActionListener doneListener = (v, a, e) -> { hideKeyboard(); return true; };
+
+    private void hideKeyboard() {
+        InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+        View f = getCurrentFocus();
+        if (imm != null) imm.hideSoftInputFromWindow(f != null ? f.getWindowToken() : rootView.getWindowToken(), 0);
+        if (rootView != null) rootView.requestFocus();   // park focus on the page so no EditText re-opens the keyboard
+    }
+
+    /** Tap anywhere outside the text box that has focus and the keyboard closes. */
+    @Override public boolean dispatchTouchEvent(MotionEvent ev) {
+        if (ev.getAction() == MotionEvent.ACTION_DOWN) {
+            View f = getCurrentFocus();
+            if (f instanceof EditText) {
+                int[] loc = new int[2];
+                f.getLocationOnScreen(loc);
+                float x = ev.getRawX(), y = ev.getRawY();
+                if (x < loc[0] || x > loc[0] + f.getWidth() || y < loc[1] || y > loc[1] + f.getHeight()) hideKeyboard();
+            }
+        }
+        return super.dispatchTouchEvent(ev);
+    }
 
     // ------------------------------------------------------------------ lifecycle
     @Override protected void onCreate(Bundle b) {
@@ -156,6 +182,8 @@ public class MainActivity extends Activity {
         e.setTextColor(TEXT);
         e.setGravity(Gravity.CENTER);
         e.setSingleLine(true);
+        e.setImeOptions(EditorInfo.IME_ACTION_DONE);
+        e.setOnEditorActionListener(doneListener);
         e.setMinWidth(dp(width));
         e.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) { }
@@ -193,6 +221,8 @@ public class MainActivity extends Activity {
         ScrollView sv = new ScrollView(this);
         sv.setFillViewport(true);
         sv.setBackgroundColor(BG);
+        sv.setFocusableInTouchMode(true);
+        rootView = sv;
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setPadding(dp(16), dp(20), dp(16), dp(28));
@@ -305,7 +335,9 @@ public class MainActivity extends Activity {
         eLine.setHint("Type a voice line");
         eLine.setHintTextColor(MUTED);
         eLine.setTextColor(TEXT);
-        eLine.setSingleLine(false);
+        eLine.setSingleLine(true);
+        eLine.setImeOptions(EditorInfo.IME_ACTION_DONE);
+        eLine.setOnEditorActionListener(doneListener);
         vl.addView(eLine, lp(0, 6));
         LinearLayout e1 = row(), e2 = row();
         e1.addView(btn("ADD", GREEN, v -> addPhrase()), lp(1, 4));
